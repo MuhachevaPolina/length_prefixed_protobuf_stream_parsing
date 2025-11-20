@@ -5,7 +5,7 @@
 
 #include "../build/message.pb.h"
 
-TEST(ParseTest, OneMessageTest) {
+TEST(ParseDelimitedTest, OneMessageTest) {
     TestTask::Messages::WrapperMessage msg;
     msg.mutable_fast_response()->set_current_date_time("19851019T050107.333");
     auto serialized = serializeDelimited(msg);
@@ -18,7 +18,22 @@ TEST(ParseTest, OneMessageTest) {
     EXPECT_EQ(parsed->fast_response().current_date_time(), "19851019T050107.333");
 }
 
-TEST(ParseTest, SeveralMessagesTest) {
+TEST(ParseDelimitedTest, EmptyWrapperTest) {
+    TestTask::Messages::WrapperMessage msg;
+    auto serialized = serializeDelimited(msg);
+
+    size_t bytesUsed;
+    auto parsed = parseDelimited<TestTask::Messages::WrapperMessage>(serialized->data(), serialized->size(), &bytesUsed);
+
+    ASSERT_NE(parsed, nullptr);
+
+    EXPECT_FALSE(parsed->has_fast_response());
+    EXPECT_FALSE(parsed->has_slow_response());
+    EXPECT_FALSE(parsed->has_request_for_fast_response());
+    EXPECT_FALSE(parsed->has_request_for_slow_response());
+}
+
+TEST(ParserTest, SeveralMessagesTest) {
     TestTask::Messages::WrapperMessage msg1;
     msg1.mutable_fast_response()->set_current_date_time("19851019T050107.333");
     auto serialized1 = serializeDelimited(msg1);
@@ -48,7 +63,7 @@ TEST(ParseTest, SeveralMessagesTest) {
     EXPECT_TRUE((*(++iterator))->has_request_for_slow_response());
 }
 
-TEST(ParseTest, PartialSendMessagesTest) {
+TEST(ParserTest, PartialMessagesTest) {
     DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
 
     TestTask::Messages::WrapperMessage msg1;
@@ -73,8 +88,4 @@ TEST(ParseTest, PartialSendMessagesTest) {
     EXPECT_TRUE((*iterator)->has_fast_response());
     EXPECT_TRUE((*(++iterator))->has_slow_response());
 
-}
-
-TEST(ParseTest, EmptyMessage) {
-    TestTask::Messages::WrapperMessage msg1;
 }
