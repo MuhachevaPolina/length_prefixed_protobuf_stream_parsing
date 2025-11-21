@@ -7,6 +7,6 @@ fi
 
 mkdir build
 cd build
-cmake ..
+cmake /home/template/102-cpp-protobuf-pmuhacheva/
 make
 ./parser_tests
