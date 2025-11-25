@@ -321,7 +321,7 @@ TEST(Parser, CorruptedData)
   EXPECT_THROW(parser.parse(stream), std::runtime_error);
 }
 
-TEST(ParseTest, PartialSendMessagesTest) {
+TEST(Parser, PartialSendMessagesTest) {
   DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
 
   TestTask::Messages::WrapperMessage msg1;
