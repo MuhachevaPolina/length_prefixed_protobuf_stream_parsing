@@ -6,79 +6,53 @@ project(protobuf_parser VERSION 1.0.0 DESCRIPTION "Разбор потока len
 cmake_minimum_required(VERSION 3.10)
 project(ProtobufParser)
 
-# Настройка C++ стандарта
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Включаем тестирование
+enable_testing()
 
-# Поиск зависимостей
+# Найти Protobuf и GoogleTest
 find_package(Protobuf REQUIRED)
 find_package(GTest REQUIRED)
 
-# Включение директорий для заголовочных файлов
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}/src/protobuf
+# Директория для сгенерированных .pb.h/.pb.cc
+set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
+
+# Сгенерировать protobuf файлы
+set(PROTO_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf/message.proto")
+set(PROTO_HEADER "${PROTO_GEN_DIR}/message.pb.h")
+set(PROTO_SRC "${PROTO_GEN_DIR}/message.pb.cc")
+
+add_custom_command(
+    OUTPUT ${PROTO_HEADER} ${PROTO_SRC}
+    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS --cpp_out=${PROTO_GEN_DIR}
+         --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf
+         ${PROTO_FILE}
+    DEPENDS ${PROTO_FILE}
+    COMMENT "Generating protobuf files"
 )
 
-# Генерация protobuf файлов
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDS
-    src/protobuf/message.proto
+# Добавляем сгенерированные файлы в источник
+add_library(protobuf_messages ${PROTO_SRC})
+target_include_directories(protobuf_messages
+    PUBLIC
+        ${PROTO_GEN_DIR}
+        ${Protobuf_INCLUDE_DIRS}
 )
+target_link_libraries(protobuf_messages ${Protobuf_LIBRARIES})
 
-# Создание статической библиотеки protobuf_parser
-add_library(protobuf_parser STATIC
-    ${PROTO_SRCS}
+# Собираем основную библиотеку (пока только заголовки, но для порядка)
+add_library(protobuf_parser INTERFACE)
+target_sources(protobuf_parser INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf_parser/DelimitedMessagesStreamParser.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf_parser/helpers.hpp
 )
-
-# Подключение protobuf к библиотеке
-target_link_libraries(protobuf_parser
-    ${PROTOBUF_LIBRARIES}
+target_include_directories(protobuf_parser
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${PROTO_GEN_DIR}
 )
+target_link_libraries(protobuf_parser INTERFACE protobuf_messages)
 
-# Включение директорий для библиотеки
-target_include_directories(protobuf_parser PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}/src/protobuf
-)
-
-# Тесты для DelimitedMessagesStreamParser
-add_executable(test_delimited_messages_parser
-    test/Test_DelimitedMessagesStreamParser.cpp
-    ${PROTO_SRCS}
-)
-
-# Тесты для Helpers
-add_executable(test_helpers
-    test/Test_Helpers.cpp
-    ${PROTO_SRCS}
-)
-
-# Подключение библиотек к тестам
-target_link_libraries(test_delimited_messages_parser
-    protobuf_parser
-    GTest::gtest
-    GTest::gtest_main
-    ${PROTOBUF_LIBRARIES}
-)
-
-target_link_libraries(test_helpers
-    protobuf_parser
-    GTest::gtest
-    GTest::gtest_main
-    ${PROTOBUF_LIBRARIES}
-)
-
-# Добавление тестов в CTest
-include(GoogleTest)
-gtest_discover_tests(test_delimited_messages_parser)
-gtest_discover_tests(test_helpers)
-
-# Установка выходных файлов protobuf в правильную директорию
-set_target_properties(protobuf_parser PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
-
-# Копирование заголовочных файлов в билд директорию для include
-file(COPY src/protobuf_parser DESTINATION ${CMAKE_BINARY_DIR}/include)
+# Подключаем тесты
+add_subdirectory(test)
