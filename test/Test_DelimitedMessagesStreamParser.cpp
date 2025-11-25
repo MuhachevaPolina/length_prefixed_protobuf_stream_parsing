@@ -320,3 +320,30 @@ TEST(Parser, CorruptedData)
   stream[data->size()] = '\x03';
   EXPECT_THROW(parser.parse(stream), std::runtime_error);
 }
+
+TEST(ParseTest, PartialSendMessagesTest) {
+  DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
+
+  TestTask::Messages::WrapperMessage msg1;
+  msg1.mutable_fast_response()->set_current_date_time("19851019T050107.333");
+  auto serialized1 = serializeDelimited(msg1);
+
+  TestTask::Messages::WrapperMessage msg2;
+  msg2.mutable_slow_response()->set_connected_client_count(40);
+  auto serialized2 = serializeDelimited(msg2);
+
+  std::vector<char> buffer;
+  buffer.insert(buffer.end(), serialized1->begin(), serialized1->end());
+  buffer.insert(buffer.end(), serialized2->begin(), serialized2->end());
+
+  auto messages1 = parser.parse(std::string(buffer.begin(), buffer.begin() + 5));
+  EXPECT_TRUE(messages1.empty());
+
+  auto messages2 = parser.parse(std::string(buffer.begin() + 5, buffer.end()));
+  ASSERT_EQ(messages2.size(), 2);
+    
+  auto iterator = messages2.begin();
+  EXPECT_TRUE((*iterator)->has_fast_response());
+  EXPECT_TRUE((*(++iterator))->has_slow_response());
+
+}
