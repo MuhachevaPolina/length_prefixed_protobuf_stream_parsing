@@ -29,16 +29,16 @@ typedef std::shared_ptr<const Data> PointerToConstData;
 
 template <typename Message> PointerToConstData serializeDelimited(const Message& msg) { 
   const size_t messageSize = PROTOBUF_MESSAGE_BYTE_SIZE(msg);
-const size_t headerSize = google::protobuf::io::CodedOutputStream::VarintSize32(messageSize);
+  const size_t headerSize = google::protobuf::io::CodedOutputStream::VarintSize32(messageSize);
 
-const PointerToData& result = std::make_shared<Data>(headerSize + messageSize);
-        google::protobuf::uint8* buffer = reinterpret_cast<google::protobuf::uint8*>(&*result->begin());
+  const PointerToData& result = std::make_shared<Data>(headerSize + messageSize);
+  google::protobuf::uint8* buffer = reinterpret_cast<google::protobuf::uint8*>(&*result->begin());
 
-        google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(messageSize, buffer);
-        msg.SerializeWithCachedSizesToArray(buffer + headerSize);
+  google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(messageSize, buffer);
+  msg.SerializeWithCachedSizesToArray(buffer + headerSize);
 
-return result;
- }
+  return result;
+}
 
 /*!
  * \brief Расшифровывает сообщение, предваренное длиной из массива байтов.
@@ -55,8 +55,7 @@ return result;
  * он не пустой.
  */
 template <typename Message>
-std::shared_ptr<Message> parseDelimited(const void* data, size_t size,
-                                        size_t* bytesConsumed = 0)
+std::shared_ptr<Message> parseDelimited(const void* data, size_t size, size_t* bytesConsumed = 0)
 {
   const uint8_t* buffer = static_cast<const uint8_t*>(data);
   google::protobuf::io::CodedInputStream codedStream(buffer, size);
@@ -64,7 +63,7 @@ std::shared_ptr<Message> parseDelimited(const void* data, size_t size,
 
   if (!data || size == 0) 
   {
-      return nullptr;
+    return nullptr;
   }
 
   bool isRead = codedStream.ReadVarint32(&messageSize);
@@ -90,10 +89,5 @@ std::shared_ptr<Message> parseDelimited(const void* data, size_t size,
 
   return message;
 }
-
-
-
-
-
 
 #endif /* SRC_PROTOBUF_PARSER_HELPERS_H_ */
