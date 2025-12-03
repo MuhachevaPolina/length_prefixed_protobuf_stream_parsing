@@ -321,7 +321,8 @@ TEST(Parser, CorruptedData)
   EXPECT_THROW(parser.parse(stream), std::runtime_error);
 }
 
-TEST(Parser, PartialSendMessagesTest) {
+TEST(Parser, PartialSendMessagesTest) 
+{
   DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
 
   TestTask::Messages::WrapperMessage msg1;
@@ -346,4 +347,22 @@ TEST(Parser, PartialSendMessagesTest) {
   EXPECT_TRUE((*iterator)->has_fast_response());
   EXPECT_TRUE((*(++iterator))->has_slow_response());
 
+}
+
+TEST(Parser, PartialHeaderFirstSending)
+{
+  DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
+  TestTask::Messages::WrapperMessage msg;
+  msg.mutable_fast_response()->set_current_date_time("19851019T050107.333");
+  auto serialized = serializeDelimited(msg);
+
+  std::vector<char> buffer;
+  buffer.insert(buffer.end(), serialized->begin(), serialized->end());
+
+  auto messageOnlyHeader = parser.parse(std::string(buffer.begin(), buffer.begin() + 2));
+  EXPECT_TRUE(messageOnlyHeader.empty());
+
+  auto messageFull = parser.parse(std::string(buffer.begin() + 2, buffer.end()));
+  auto message = messageFull.begin();
+  EXPECT_EQ((*message)->fast_response().current_date_time(), "19851019T050107.333");
 }

@@ -57,10 +57,16 @@ template <typename Message> PointerToConstData serializeDelimited(const Message&
 template <typename Message>
 std::shared_ptr<Message> parseDelimited(const void* data, size_t size, size_t* bytesConsumed = 0)
 {
+
+  if (!bytesConsumed) 
+  {
+    throw std::runtime_error("nullptr was given to function (bytesConsumed)");
+  }
+
   const uint8_t* buffer = static_cast<const uint8_t*>(data);
   google::protobuf::io::CodedInputStream codedStream(buffer, size);
   uint32_t messageSize = 0;
-
+  
   if (!data || size == 0) 
   {
     return nullptr;

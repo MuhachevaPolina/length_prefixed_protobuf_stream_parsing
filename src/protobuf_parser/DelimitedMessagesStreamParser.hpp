@@ -31,7 +31,7 @@ class DelimitedMessagesStreamParser
       }
 
       result.push_back(message);
-        m_buffer.erase(m_buffer.begin(), m_buffer.begin() + bytesConsumed);
+      m_buffer.erase(m_buffer.begin(), m_buffer.begin() + bytesConsumed);
     }
     
     return result;
