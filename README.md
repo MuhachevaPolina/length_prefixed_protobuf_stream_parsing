@@ -1,6 +1,6 @@
-# 102-cpp-protobuf-pmuhacheva
+# cpp-protobuf
 
-Репозиторий задания "Разбор потока length-prefixed Protobuf сообщений на C++" (LEARNING_CENTER-102)
+Репозиторий задания "Разбор потока length-prefixed Protobuf сообщений на C++"
 
 Выполнила: Мухачева Полина
 
