@@ -4,6 +4,8 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+
 TEST(Parser, OneFastRequest)
 {
   std::list<typename DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage>::PointerToConstValue> messages;
@@ -349,20 +351,43 @@ TEST(Parser, PartialSendMessagesTest)
 
 }
 
-TEST(Parser, PartialHeaderFirstSending)
+TEST(Parser, PartialHeaderSending)
 {
   DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
   TestTask::Messages::WrapperMessage msg;
+  std::string longStr = std::string(200, 'a');
+  msg.mutable_fast_response()->set_current_date_time(longStr);
+  auto serialized = serializeDelimited(msg);
+
+  std::vector<char> buffer;
+  buffer.insert(buffer.end(), serialized->begin(), serialized->end());
+
+  //EXPECT_TRUE(messageOnlyHeader.empty());
+
+  //auto messageFull = parser.parse(std::string(buffer.begin() + 1, buffer.end()));
+  //auto message = messageFull.begin();
+  auto empty_msg = parser.parse(std::string(buffer.begin(), buffer.begin() + 1));
+  EXPECT_TRUE(empty_msg.empty());
+  auto message = parser.parse(std::string(buffer.begin() + 1, buffer.end()));
+  auto iterator = message.begin();
+  EXPECT_TRUE((*iterator)->has_fast_response());
+}
+
+TEST(Parser, HeaderFirstSending)
+{
+  DelimitedMessagesStreamParser<TestTask::Messages::WrapperMessage> parser;
+  TestTask::Messages::WrapperMessage msg;
+  //std::string longStr = std::string(200, 'a');
   msg.mutable_fast_response()->set_current_date_time("19851019T050107.333");
   auto serialized = serializeDelimited(msg);
 
   std::vector<char> buffer;
   buffer.insert(buffer.end(), serialized->begin(), serialized->end());
 
-  auto messageOnlyHeader = parser.parse(std::string(buffer.begin(), buffer.begin() + 2));
+  auto messageOnlyHeader = parser.parse(std::string(buffer.begin(), buffer.begin() + 1));
   EXPECT_TRUE(messageOnlyHeader.empty());
 
-  auto messageFull = parser.parse(std::string(buffer.begin() + 2, buffer.end()));
+  auto messageFull = parser.parse(std::string(buffer.begin() + 1, buffer.end()));
   auto message = messageFull.begin();
   EXPECT_EQ((*message)->fast_response().current_date_time(), "19851019T050107.333");
 }

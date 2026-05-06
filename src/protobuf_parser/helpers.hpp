@@ -58,10 +58,10 @@ template <typename Message>
 std::shared_ptr<Message> parseDelimited(const void* data, size_t size, size_t* bytesConsumed = 0)
 {
 
-  if (!bytesConsumed) 
-  {
-    throw std::runtime_error("nullptr was given to function (bytesConsumed)");
-  }
+  // if (!bytesConsumed) 
+  // {
+  //   throw std::runtime_error("nullptr was given to function (size_t* bytesConsumed)");
+  // }
 
   const uint8_t* buffer = static_cast<const uint8_t*>(data);
   google::protobuf::io::CodedInputStream codedStream(buffer, size);
@@ -75,7 +75,7 @@ std::shared_ptr<Message> parseDelimited(const void* data, size_t size, size_t* b
   bool isRead = codedStream.ReadVarint32(&messageSize);
   if (!isRead) 
   {
-    throw std::runtime_error("error while reading header");
+    return nullptr;
   }
 
   size_t headerSize = codedStream.CurrentPosition();
@@ -90,8 +90,9 @@ std::shared_ptr<Message> parseDelimited(const void* data, size_t size, size_t* b
   {
     throw std::runtime_error("error while parsing");
   }
-
-  *bytesConsumed = headerSize + messageSize;
+  if (bytesConsumed) {
+    *bytesConsumed = headerSize + messageSize;
+  }
 
   return message;
 }

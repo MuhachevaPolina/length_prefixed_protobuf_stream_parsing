@@ -20,20 +20,33 @@ class DelimitedMessagesStreamParser
   std::list<PointerToConstValue> parse(const std::string& data)
   {
     std::list<PointerToConstValue> result;
-    size_t bytesConsumed = 0;
+    size_t curPosition = 0;
     m_buffer.insert(m_buffer.end(), data.begin(), data.end());
-    while (true) 
+    std::shared_ptr<MessageType> message;
+    while (curPosition < m_buffer.size()) 
     {
-      auto message = parseDelimited<MessageType>(m_buffer.data(), m_buffer.size(), &bytesConsumed);
-      if (!message) 
-      {
-        break;
-      }
+      //try 
+      //{
+      size_t tmpBytesConsumed = 0;
+        message = parseDelimited<MessageType>(m_buffer.data() + curPosition, m_buffer.size() - curPosition, 
+                                              &tmpBytesConsumed);
+        if (!message || tmpBytesConsumed == 0) 
+        {
+          break;
+        }
+      //}
+      //catch (const std::runtime_error &e) 
+      //{
+      //  break;
+      //}
 
       result.push_back(message);
-      m_buffer.erase(m_buffer.begin(), m_buffer.begin() + bytesConsumed);
+      curPosition += tmpBytesConsumed;
     }
     
+    if (curPosition != 0) {
+      m_buffer.erase(m_buffer.begin(), m_buffer.begin() + curPosition);
+    }
     return result;
   }
  private:

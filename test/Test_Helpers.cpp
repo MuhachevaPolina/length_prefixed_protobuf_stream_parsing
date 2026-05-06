@@ -117,3 +117,23 @@ TEST(ParseDelimited, WrongMessageSizeTest)
   ASSERT_TRUE(delimited == nullptr);
   EXPECT_EQ(bytesConsumed, 0);
 }
+
+TEST(ParseDelimited, NoBytesConsumedTest)
+{
+  std::shared_ptr<TestTask::Messages::WrapperMessage> delimited;
+
+  TestTask::Messages::WrapperMessage message;
+  message.mutable_request_for_fast_response();
+
+  auto buffer = serializeDelimited(message);
+  //size_t bytesConsumed = 0;
+
+  delimited = parseDelimited<TestTask::Messages::WrapperMessage>(
+                buffer->data(),
+                buffer->size()
+              );
+
+  ASSERT_FALSE(delimited == nullptr);
+  EXPECT_TRUE(delimited->has_request_for_fast_response());
+  //EXPECT_EQ(bytesConsumed, buffer->size());
+}
